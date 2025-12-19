@@ -11,12 +11,13 @@ class Signal:
     # default signals that exist indepdently
     def __init__(self,value):
         self.value=value
+        self.parents=[]
     def output(self):
         return self.value
     
-objlist[0]=Signal(0)
-objlist[1]=Signal(1)
-objlist[-1]=Signal(-1)
+objlist['0']=Signal(0)
+objlist['1']=Signal(1)
+objlist['-1']=Signal(-1)
 
 
 class Gate:   
@@ -36,21 +37,24 @@ class Gate:
 
     # connects gates
     def connect(self,child):
-        if len(self.children)<self.inputlimit:
+        if self.code in varlist:
+            self.children[0]=child
+        elif len(self.children)<self.inputlimit:
             self.children.append(child)
             objlist[child].parents.append(self.code)
 
     # deletes parent from the parent list
-    def delparent(self,parent):    
-        if parent in self.parents:
-            objlist[parent].children.remove(self.code)
-            self.parents.remove(parent)
-    
-    # deletes child from the children list
-    def delchild(self,child):    
-        if child in self.children:
-            objlist[child].parents.remove(self.code)
-            self.children.remove(child)
+    def disconnect(self,node):    
+        # check if node is a parent or a child
+        # then delete accordingly
+        if node in self.parents:
+            objlist[node].children.remove(self.code)
+            self.parents.remove(node)
+        elif node in self.children:
+            objlist[node].parents.remove(self.code)
+            self.children.remove(node)
+        else:
+            print('Not Connected')
 
     # checks if there are enough desired children
     def output_check(self):
@@ -69,17 +73,25 @@ class Gate:
 
 
 class Variable(Gate):
+    # this can be both an input or output(bulb)
     rank=0
     def __init__(self):
         super().__init__()        
         self.inputlimit=1
         self.code=chr(ord('A') + Variable.rank)
         Variable.rank+=1
-        self.children.append(0)
-
+        self.children.append('0')
+    # no changing the limit
+    def setlimits(self):
+        pass
     def output(self):
-       child=self.children[0]
-       return objlist[child].output()
+        if self.output_check()==False:
+                return -1        
+        child =objlist[self.children[0]].output()
+        if child==-1:
+            return -1
+        else:
+            return child
     
         
 class NOT(Gate):
@@ -89,16 +101,19 @@ class NOT(Gate):
         self.inputlimit=1
         NOT.rank+=1
         self.code='NOT-'+str(NOT.rank)
-        
+
+    # no changing the limit
+    def setlimits(self):
+        pass
     def output(self):
         if self.output_check()==False:
             return -1
         
-        x=objlist[self.children[0]].output()
-        if x==-1:
+        child=objlist[self.children[0]].output()
+        if child==-1:
             return -1
         else:
-            return not x
+            return not child
         
 class AND(Gate):
 
@@ -110,6 +125,7 @@ class AND(Gate):
     def output(self):
         if self.output_check()==False:
             return -1
+        # iterate through the children/inputs
         x=objlist[self.children[0]].output()
         for i in range(1,self.inputlimit):
             x= x and objlist[self.children[i]].output()
@@ -119,6 +135,7 @@ class AND(Gate):
 
 class NAND(AND):
     rank=0
+    # basically a not + and gate
     def __init__(self):
         super().__init__()
         NAND.rank+=1
@@ -176,152 +193,78 @@ class XNOR(XOR):
         return not super().output()
 
 
+# inventory
+def listComponent():
+    for i in range(len(complist)):
+        print(f'{i}. {complist[i]}')
 
 def addComponent():
-    while True:
-        print("Choose a gate to add to the circuit:")
-        print("1. NOT")
-        print("2. AND")
-        print("3. NAND")
-        print("4. OR")
-        print("5. NOR")  
-        print("6. XOR")
-        print("7. XNOR")
-        print("8. Variables")     
+    print("Choose a gate to add to the circuit:")
+    print("1. NOT")
+    print("2. AND")
+    print("3. NAND")
+    print("4. OR")
+    print("5. NOR")  
+    print("6. XOR")
+    print("7. XNOR")
+    print("8. Variable")     
 
-        choice = input("Enter your choice: ").split()
-        if len(choice)==0:
-            break
-        for i in choice:
-            print(i)
-            if i == '1':
-                gt = NOT()
+    choice = input("Enter your choice: ").split()
 
-            elif i == '2':
-                gt = AND()
-            elif i == '3':
-                gt = NAND()
-            elif i == '4':
-                gt = OR()
-            elif i == '5':
-                gt = NOR()
-                
-            elif i == '6':
-                gt = XOR()
-            elif i == '7':
-                gt = XNOR()
-            elif i=='8':
-                gt=Variable()
-                varlist.append(gt.code)
-            else:
-                break
-            objlist[gt.code]=gt
+    for i in choice:
+        if i == '1':
+            gt = NOT()
+        elif i == '2':
+            gt = AND()
+        elif i == '3':
+            gt = NAND()
+        elif i == '4':
+            gt = OR()
+        elif i == '5':
+            gt = NOR()                
+        elif i == '6':
+            gt = XOR()
+        elif i == '7':
+            gt = XNOR()
+        elif i=='8':
+            gt=Variable()
+            varlist.append(gt.code)
+        objlist[gt.code]=gt
+        complist.append(gt.code)
 
-            complist.append(gt.code)
-        print(complist)
+def deleteComponent(gate):
+    for child in gate.children:
+        objlist[child].parents.remove(gate)
+    for parent in gate.parent:
+        objlist[parent].children.remove(gate)
+    
+# wiring
 
-objlist['AND-1']=AND()
-objlist['A']=Variable()
-objlist['A'].children[0]=1
-objlist['AND-1'].children.append('A')
-objlist['B']=Variable()
-objlist['B'].children[0]=0
-objlist['AND-1'].children.append('B')
-objlist['NOT-1']=NOT()
-# add and-1 ,not-1 and variables to complist with append
-complist.append('AND-1')
-complist.append('A')
-complist.append('B')
-complist.append('NOT-1')
-# add each input to their parent and vise versa
-objlist['AND-1'].parents.append('NOT-1')
-objlist['NOT-1'].children.append('AND-1')
-# same for variables
-objlist['A'].parents.append('AND-1')
-objlist['B'].parents.append('AND-1')
+def connect(gate,comp):
+    objlist[gate].connect(comp)
+def disconnect(gate,comp):
+    objlist[gate].disconnect(comp)
 
 
+# Result 
+def output(gate):
+    print(objlist[gate].display_output())
 
-#print(objlist['NOT-1'].display_output())
+# create items manually
+addComponent()
+connect('AND-1','A')
+connect('AND-1','B')
+connect('NOT-1','AND-1')
 
-def removeparent(gate,parent):    
-    objlist[parent].children.remove(gate)
-    objlist[gate].parents.remove(parent)
+connect('A','1')
+connect('B','0')
 
+output('AND-1')
 
-def removechild(gate,child):    
-    objlist[child].parents.remove(gate)       
-    objlist[gate].children.remove(child)
+disconnect('NOT-1','AND-1')
+connect('NOT-1','0')
 
-
-def disconnect():
-    while True:
-        for i in range(len(complist)):
-            print(f'{i}. {complist[i]}')
-        print()
-        print("Which component do you want to disconnect?")
-        
-        
-        comp = int(input("Enter the index of the component to disconnect (or -1 to exit): "))
-        print()
-        if comp == -1:
-            break
-        op1=input('1. Parent 2. children\n')
-
-        if op1=='1':
-            parentlist=objlist[complist[comp]].parents
-            print('Parentlist: ',end='')
-            for i in range(len(parentlist)):
-                print(f'{i}. {parentlist[i]}')
-            parent=complist[int(input('Select Parent from the list: '))]
-            gate=complist[comp]
-            print(f'disconnecting {gate} & {parent}')
-            removeparent(gate,parent)
-        if op1=='2':
-            childlist=objlist[complist[comp]].children
-            print('childlist: ',end='')
-            for i in range(len(childlist)):
-                print(f'{i}. {childlist[i]}')
-            child=complist[int(input('Select Child from the list: '))]
-            gate=complist[comp]
-            print(f'disconnecting {gate} & {child}')
-            removechild(gate,child)      
-                
-disconnect()
-
-        
-
-        
-
-def wires():
-    while True:
-        for i in range(len(complist)):
-                print(f'{i}. {complist[i]}',end=' | ')
-        print()
-        print('1. Connect Components')
-        print('2. Variable input')
-        print('3. See outputs')
-        choice=input()
-        if choice=='1':            
-            comp=int(input('Select Component: '))
-            if(comp==-1):
-                break
-           
-            add = list(map(int,input("Enter your children: ").split()))
-            if len(add)==0:
-                break
-            for i in add:    
-                objlist[complist[i]].parents.append(complist[comp])
-                objlist[complist[comp]].children.append(complist[i])
-            print(objlist[complist[comp]].children)
-        elif choice=='2':
-             if complist[comp] in varlist:
-                    objlist[complist[comp]].children[0]=int(input('0 or 1'))
-        elif choice=='3':
-            comp=int(input('Select Component: '))
-            print(objlist[complist[comp]].display_output())
-        else:
-            break
+output('NOT-1')
 
 
 
