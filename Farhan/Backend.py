@@ -198,6 +198,10 @@ def listComponent():
     for i in range(len(complist)):
         print(f'{i}. {complist[i]}')
 
+def listVar():
+    for i in range(len(varlist)):
+        print(f'{i}. {varlist[i]}')
+
 def addComponent():
     print("Choose a gate to add to the circuit:")
     print("1. NOT")
@@ -233,10 +237,12 @@ def addComponent():
         complist.append(gt.code)
 
 def deleteComponent(gate):
-    for child in gate.children:
+    gate_obj=objlist[gate]
+    for child in gate_obj.children:
         objlist[child].parents.remove(gate)
-    for parent in gate.parent:
+    for parent in gate_obj.parents:
         objlist[parent].children.remove(gate)
+    del objlist[gate]
     
 # wiring
 
@@ -249,24 +255,5 @@ def disconnect(gate,comp):
 # Result 
 def output(gate):
     print(objlist[gate].display_output())
-
-# create items manually
-addComponent()
-connect('AND-1','A')
-connect('AND-1','B')
-connect('NOT-1','AND-1')
-
-connect('A','1')
-connect('B','0')
-
-output('AND-1')
-
-disconnect('NOT-1','AND-1')
-connect('NOT-1','0')
-
-output('NOT-1')
-
-
-
 
 
