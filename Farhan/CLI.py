@@ -7,16 +7,19 @@ def menu():
         print("2. List Components")
         print("3. Connect Components")
         print("4. Disconnect Components")
-        print("5. Set Input Variable Value")
-        print("6. Show Output of a Component")
-        print("7. Exit")
+        print("5. Delete Components")
+        print("6. Set Input Variable Value")
+        print("7. Show Output of a Component")
+        print("8. Exit")
 
         choice = input("Enter your choice: ")
 
         if choice == '1':
             base.addComponent()
+
         elif choice == '2':
             base.listComponent()
+
         elif choice == '3':
             base.listComponent()
             gate_code = input("Enter the serial of the gate you want to connect components: ")
@@ -33,9 +36,16 @@ def menu():
             childlist = list(map(int,input("Enter the serial of the component to disconnect to: ").split()))
             for child in childlist:
                 base.disconnect(gate_code, base.complist[child])
-                print(f"Disconnected {base.complist[child]} to {gate_code}.")
+                print(f"Disconnected {base.complist[child]} & {gate_code}.")
 
         elif choice == '5':
+            base.listComponent()
+            gatelist = list(map(int,input("Enter the serial of the components you want to delete: ").split()))
+            for gate in gatelist:
+                base.deleteComponent(base.complist[gate])
+                print(f"Deleted {base.complist[gate]}.")
+                del base.complist[gate]
+        elif choice == '6':
             base.listVar()
             var = input("Enter the code of the variable to set : ")
             if var in base.varlist:
@@ -46,13 +56,13 @@ def menu():
                 else:
                     print("Invalid value. Please enter 0 or 1.")
 
-        elif choice == '6':
+        elif choice == '7':
             base.listComponent()
             gate_code = input("Enter the serial of the gate you want to see output of: ")
             gate_code=base.complist[int(gate_code)]
             base.output(gate_code)
            
-        elif choice == '7':
+        elif choice == '8':
             print("Exiting Circuit Simulator.")
             break
         else:

@@ -237,10 +237,12 @@ def addComponent():
         complist.append(gt.code)
 
 def deleteComponent(gate):
-    for child in gate.children:
+    gate_obj=objlist[gate]
+    for child in gate_obj.children:
         objlist[child].parents.remove(gate)
-    for parent in gate.parent:
+    for parent in gate_obj.parents:
         objlist[parent].children.remove(gate)
+    del objlist[gate]
     
 # wiring
 
