@@ -1,5 +1,5 @@
 import Backend as base
-
+from readchar import readkey,key
 def menu():
     while True:
         print("\n--- Circuit Simulator Menu ---")
@@ -12,7 +12,8 @@ def menu():
         print("7. Show Output of a Component")
         print("8. Exit")
 
-        choice = input("Enter your choice: ")
+        print("Enter your choice: ",end='')
+        choice = readkey()
 
         if choice == '1':
             base.addComponent()
@@ -62,8 +63,8 @@ def menu():
             gate_code=base.complist[int(gate_code)]
             base.output(gate_code)
            
-        elif choice == '8':
-            print("Exiting Circuit Simulator.")
+        elif choice == key.ESC:
+            print("\nExiting Circuit Simulator.")
             break
         else:
             print("Invalid choice. Please try again.")
