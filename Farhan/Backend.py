@@ -301,3 +301,18 @@ def output(gate):
     print(objlist[gate].display_output())
 
 
+# Truth Table
+def truthTable(gate):
+    if gate in complist and gate not in varlist:
+        bits=1<<len(varlist)
+        for i in varlist:
+            print(i,end=' ')
+        print(gate)
+        for i in range(bits):
+            for j in range(len(varlist)):
+                var=objlist[varlist[j]]
+                bitpoint=int((i & (1<<(len(varlist)-j-1)))!=0)
+                var.connect(str(bitpoint))
+                print('T' if var.output else 'F',end=' ')
+            print('T' if objlist[gate].output else 'F')
+

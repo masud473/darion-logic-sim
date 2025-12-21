@@ -12,6 +12,7 @@ def menu():
         print("5. Delete Components")
         print("6. Set Input Variable Value")
         print("7. Show Output of a Component")
+        print("8. Show Truth Table of a Component")
 
         print("Enter your choice or press ESC to quit: ",end='')
         choice = readkey()
@@ -64,7 +65,12 @@ def menu():
             gate_code = input("Enter the serial of the gate you want to see output of: ")
             gate_code=base.complist[int(gate_code)]
             base.output(gate_code)
-           
+
+        elif choice == '8':
+            base.listComponent()
+            gate_code = input("Enter the serial of the gate you want to see Truth Table of: ")
+            gate_code=base.complist[int(gate_code)]
+            base.truthTable(gate_code)
         elif choice == key.ESC:
             print("\nExiting Circuit Simulator.")
             break
