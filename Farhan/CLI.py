@@ -1,5 +1,7 @@
 import Backend as base
 from readchar import readkey,key
+
+
 def menu():
     while True:
         print("\n--- Circuit Simulator Menu ---")
@@ -10,11 +12,10 @@ def menu():
         print("5. Delete Components")
         print("6. Set Input Variable Value")
         print("7. Show Output of a Component")
-        print("8. Exit")
 
-        print("Enter your choice: ",end='')
+        print("Enter your choice or press ESC to quit: ",end='')
         choice = readkey()
-
+        print()
         if choice == '1':
             base.addComponent()
 
@@ -48,7 +49,8 @@ def menu():
                 del base.complist[gate]
         elif choice == '6':
             base.listVar()
-            var = input("Enter the code of the variable to set : ")
+            var = input("Enter the serial of the variable to set : ")
+            var=base.varlist[int(var)]
             if var in base.varlist:
                 value = input("Enter the value (0 or 1): ")
                 if value in ['0', '1']:

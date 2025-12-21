@@ -1,6 +1,4 @@
 
-from encodings.punycode import T
-
 
 objlist={}
 complist=[]
@@ -10,66 +8,77 @@ varlist=[]
 class Signal:
     # default signals that exist indepdently
     def __init__(self,value):
-        self.value=value
         self.parents=[]
-    def output(self):
-        return self.value
+        self.output=value
     
 objlist['0']=Signal(0)
 objlist['1']=Signal(1)
-objlist['-1']=Signal(-1)
-
 
 class Gate:   
 
     def __init__(self):
         # gate's children or inputs
-        self.children=[]
+        self.children=[set(),set()]
         # parents of the gate
         self.parents=[]
         # input limit
         self.inputlimit=2
+        #default output
+        self.output=0
         # each gate will have it's own unique id
         self.code=''
     # sets number of children
     def setlimits(self,l):
         self.inputlimit=l
 
+    def turnon(self):
+        return len(self.children[0])+len(self.children[1])>=self.inputlimit
+
     # connects gates
     def connect(self,child):
-        if self.code in varlist:
-            self.children[0]=child
-        elif len(self.children)<self.inputlimit:
-            self.children.append(child)
-            objlist[child].parents.append(self.code)
-
+        val=objlist[child].output
+        if self.code in varlist or self.code.find('NOT')!=-1:
+            self.children[0].clear()
+            self.children[1].clear()
+        self.children[val].add(child)
+        objlist[child].parents.append(self.code)
+        self.process()
     # deletes parent from the parent list
     def disconnect(self,node):    
         # check if node is a parent or a child
         # then delete accordingly
+        val=objlist[node].output
         if node in self.parents:
-            objlist[node].children.remove(self.code)
+            objlist[node].children[val].remove(self.code)
+            objlist[node].process()
             self.parents.remove(node)
-        elif node in self.children:
+        elif node in self.children[val]:
             objlist[node].parents.remove(self.code)
-            self.children.remove(node)
+            self.children[val].remove(node)
+            self.process()
         else:
             print('Not Connected')
 
-    # checks if there are enough desired children
-    def output_check(self):
-        return len(self.children)==self.inputlimit
-    
-    def output(self):
+
+    def switch(self,comp,a,b):
+        self.children[a].remove(comp)
+        self.children[b].add(comp)
+        self.process()
+
+    def update(self,prev,out):
+        if self.turnon() and out!=prev:
+            for parent in self.parents:
+                objlist[parent].switch(self.code,prev,out)
+
+
+
+    def process(self):
         pass
-    
+
     # gives output in T or F
     def display_output(self):
-        out=self.output()
+        out=self.output
         return 'T' if out else 'F'
-
-
-
 
 
 class Variable(Gate):
@@ -80,18 +89,22 @@ class Variable(Gate):
         self.inputlimit=1
         self.code=chr(ord('A') + Variable.rank)
         Variable.rank+=1
-        self.children.append('0')
+        self.children[0].add('0')
     # no changing the limit
     def setlimits(self):
         pass
-    def output(self):
-        if self.output_check()==False:
-                return -1        
-        child =objlist[self.children[0]].output()
-        if child==-1:
-            return -1
+    def process(self):
+        out=self.output
+        if len(self.children[0]):
+            out=0
+        elif len(self.children[1]):
+            out=1
         else:
-            return child
+            out=0
+        prev=self.output
+        self.output=out
+        self.update(prev,out)
+        
     
         
 class NOT(Gate):
@@ -105,15 +118,17 @@ class NOT(Gate):
     # no changing the limit
     def setlimits(self):
         pass
-    def output(self):
-        if self.output_check()==False:
-            return -1
-        
-        child=objlist[self.children[0]].output()
-        if child==-1:
-            return -1
+    def process(self):
+        out=self.output
+        if len(self.children[0]):
+            out=1
+        elif len(self.children[1]):
+            out=0
         else:
-            return not child
+            out=0
+        prev=self.output
+        self.output=out
+        self.update(prev,out)
         
 class AND(Gate):
 
@@ -122,14 +137,19 @@ class AND(Gate):
         super().__init__()        
         AND.rank+=1
         self.code='AND-'+str(AND.rank)
-    def output(self):
-        if self.output_check()==False:
-            return -1
-        # iterate through the children/inputs
-        x=objlist[self.children[0]].output()
-        for i in range(1,self.inputlimit):
-            x= x and objlist[self.children[i]].output()
-        return x
+    def process(self):
+        out=self.output
+        if len(self.children[0]):
+            out=0
+        elif len(self.children[1]):
+            out=1
+        else: 
+            out=0
+        prev=self.output
+        self.output=out
+        self.update(prev,out)
+
+        
     
 
 
@@ -141,8 +161,17 @@ class NAND(AND):
         NAND.rank+=1
         self.code='NAND-'+str(NAND.rank)
         AND.rank-=1
-    def output(self):
-        return not super().output()
+    def process(self):
+        out=self.output
+        if len(self.children[0]):
+            out=1
+        elif len(self.children[1]):
+            out=0
+        else: 
+            out=0
+        prev=self.output
+        self.output=out
+        self.update(prev,out)
 
 class OR(Gate):
     rank=0
@@ -150,13 +179,15 @@ class OR(Gate):
         super().__init__()        
         OR.rank+=1
         self.code='OR-'+str(OR.rank)
-    def output(self):
-        if self.output_check()==False:
-            return -1
-        x=objlist[self.children[0]].output()
-        for i in range(1,self.inputlimit):
-            x= x or objlist[self.children[i]].output()
-        return x
+    def process(self):
+        out=self.output
+        if len(self.children[1]):
+            out=1
+        else: 
+            out=0
+        prev=self.output
+        self.output=out
+        self.update(prev,out)
 
 class NOR(OR):
     rank=0
@@ -165,8 +196,18 @@ class NOR(OR):
         NOR.rank+=1
         self.code='NOR-'+str(NOR.rank)
         OR.rank-=1
-    def output(self):
-        return not super().output()
+    def process(self):
+        out=self.output
+        if len(self.children[1]):
+            out=0
+        elif len(self.children[0]):
+            out=1
+        else: 
+            out=0
+        # output needs to be updated first
+        prev=self.output
+        self.output=out
+        self.update(prev,out)
 
 class XOR(Gate):
     rank=0
@@ -174,13 +215,11 @@ class XOR(Gate):
         super().__init__()        
         XOR.rank+=1
         self.code='XOR-'+str(XOR.rank)
-    def output(self):
-        if self.output_check()==False:
-            return -1
-        x=objlist[self.children[0]].output()
-        for i in range(1,self.inputlimit):
-            x= x ^ objlist[self.children[i]].output()
-        return x
+    def process(self):
+        out=int(len(self.children[1])%2)
+        prev=self.output
+        self.output=out
+        self.update(prev,out)
 
 class XNOR(XOR):
     rank=0
@@ -189,8 +228,11 @@ class XNOR(XOR):
         XNOR.rank+=1
         self.code='XNOR-'+str(XNOR.rank)
         XOR.rank-=1
-    def output(self):
-        return not super().output()
+    def process(self):
+        out=int(len(self.children[1])%2==0)
+        prev=self.output
+        self.output=out
+        self.update(prev,out)
 
 
 # inventory
@@ -238,10 +280,12 @@ def addComponent():
 
 def deleteComponent(gate):
     gate_obj=objlist[gate]
-    for child in gate_obj.children:
+    for child in gate_obj.children[0]:
+        objlist[child].parents.remove(gate)
+    for child in gate_obj.children[1]:
         objlist[child].parents.remove(gate)
     for parent in gate_obj.parents:
-        objlist[parent].children.remove(gate)
+        objlist[parent].diconnnect(gate)
     del objlist[gate]
     
 # wiring
