@@ -104,8 +104,7 @@ class Variable(Gate):
         prev=self.output
         self.output=out
         self.update(prev,out)
-        
-    
+
         
 class NOT(Gate):
     rank=0
@@ -150,17 +149,13 @@ class AND(Gate):
         self.update(prev,out)
 
         
-    
-
-
-class NAND(AND):
+class NAND(Gate):
     rank=0
     # basically a not + and gate
     def __init__(self):
         super().__init__()
         NAND.rank+=1
         self.code='NAND-'+str(NAND.rank)
-        AND.rank-=1
     def process(self):
         out=self.output
         if len(self.children[0]):
@@ -189,13 +184,12 @@ class OR(Gate):
         self.output=out
         self.update(prev,out)
 
-class NOR(OR):
+class NOR(Gate):
     rank=0
     def __init__(self):
         super().__init__()
         NOR.rank+=1
         self.code='NOR-'+str(NOR.rank)
-        OR.rank-=1
     def process(self):
         out=self.output
         if len(self.children[1]):
@@ -221,13 +215,12 @@ class XOR(Gate):
         self.output=out
         self.update(prev,out)
 
-class XNOR(XOR):
+class XNOR(Gate):
     rank=0
     def __init__(self):
         super().__init__()
         XNOR.rank+=1
         self.code='XNOR-'+str(XNOR.rank)
-        XOR.rank-=1
     def process(self):
         out=int(len(self.children[1])%2==0)
         prev=self.output
