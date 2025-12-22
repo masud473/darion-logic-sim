@@ -1,9 +1,7 @@
-
-
+from time import sleep
 objlist={}
 complist=[]
 varlist=[]
-
 
 class Signal:
     # default signals that exist indepdently
@@ -19,7 +17,6 @@ class Gate:
     def __init__(self):
         # gate's children or inputs
         self.children=[set(),set()]
-        # parents of the gate
         self.parents=[]
         # input limit
         self.inputlimit=2
@@ -37,12 +34,23 @@ class Gate:
     # connects gates
     def connect(self,child):
         val=objlist[child].output
-        if self.code in varlist or self.code.find('NOT')!=-1:
-            self.children[0].clear()
-            self.children[1].clear()
-        self.children[val].add(child)
-        objlist[child].parents.append(self.code)
+        
+        # secondary optimization
+        # connect child to self
+        if child in self.children[val]:
+            return
+        else:
+            self.children[val].add(child)
+        if child in self.children[val^1]:
+            self.children[val^1].remove(child)
+        if isinstance(self,Variable) or isinstance(self,NOT):
+            self.children[val^1].clear()
+
+        # connect itself to children
+        if isinstance(objlist[child],Signal)==False:
+            objlist[child].parents.append(self.code)
         self.process()
+
     # deletes parent from the parent list
     def disconnect(self,node):    
         # check if node is a parent or a child
@@ -60,17 +68,10 @@ class Gate:
             print('Not Connected')
 
 
-    def switch(self,comp,a,b):
-        self.children[a].remove(comp)
-        self.children[b].add(comp)
-        self.process()
-
     def update(self,prev,out):
         if self.turnon() and out!=prev:
             for parent in self.parents:
-                objlist[parent].switch(self.code,prev,out)
-
-
+                objlist[parent].connect(self.code)
 
     def process(self):
         pass
@@ -278,7 +279,7 @@ def deleteComponent(gate):
     for child in gate_obj.children[1]:
         objlist[child].parents.remove(gate)
     for parent in gate_obj.parents:
-        objlist[parent].diconnnect(gate)
+        objlist[parent].diconnect(gate)
     del objlist[gate]
     
 # wiring
