@@ -353,7 +353,7 @@ def truthTable(gate):
             print('T' if objlist[gate].output else 'F')
 
 
-# diagnose this menu is AI generated and it's not the main part of code just to check errors in CLI mode
+# diagnosis: this menu is AI generated and it's not the main part of code just to check errors in CLI mode
 def diagnose():
     print("--- Component Diagnosis ---")
     
